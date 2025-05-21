@@ -30,4 +30,4 @@ jobs:
             docker stop simple-node-app || true
             docker rm simple-node-app || true
             docker run -d -p 3000:3000 --name simple-node-app simple-node-app
-EOF
+         EOF
