@@ -1,33 +1,37 @@
-name: Deploy Node.js App via Docker
+name: Deploy Node.js Docker App
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "master" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Set up SSH
+      - name: Set up SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          
+
       - name: Build Docker image
         run: docker build -t simple-node-app .
 
-      - name: Save and send Docker image to server
+      - name: Save Docker image to file
+        run: docker save simple-node-app -o simple-node-app.tar
+
+      - name: Copy Docker image to remote server
         run: |
-          docker save simple-node-app | bzip2 | ssh -tt -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "bunzip2 | sudo docker load"
-          
-      - name: Run Docker container on server
+          scp -o StrictHostKeyChecking=no simple-node-app.tar ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/tmp/
+
+      - name: Run container on remote server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
             sudo docker stop simple-node-app || true
             sudo docker rm simple-node-app || true
-            sudo docker run -d -p 3000:3000 --name simple-node-app simple-node-app 
-            EOF
+            sudo docker load -i /tmp/simple-node-app.tar
+            sudo docker run -d -p 3000:3000 --name simple-node-app simple-node-app
+          EOF
