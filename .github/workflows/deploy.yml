@@ -22,7 +22,7 @@ jobs:
 
       - name: Save and send Docker image to server
         run: |
-          docker save simple-node-app | bzip2 | ssh -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "bunzip2 | sudo docker load"
+          docker save simple-node-app | bzip2 | ssh -tt -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "bunzip2 | sudo docker load"
           
       - name: Run Docker container on server
         run: |
