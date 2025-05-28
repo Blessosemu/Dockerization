@@ -1,0 +1,33 @@
+name: Build and Publish to AWS ECR Public
+
+on:
+  push:
+    branches: [master]  # or your default branch
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR Public
+      run: |
+        aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin public.ecr.aws
+
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ secrets.ECR_PUBLIC_REPOSITORY }}:latest .
+        docker tag ${{ secrets.ECR_PUBLIC_REPOSITORY }}:v1
+
+    - name: Push Docker images
+      run: |
+        docker push ${{ secrets.ECR_PUBLIC_REPOSITORY }}:v1
